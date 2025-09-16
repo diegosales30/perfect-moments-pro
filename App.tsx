@@ -1,6 +1,5 @@
-
 import React, { useState, useCallback } from 'react';
-import { FiCamera, FiRepeat, FiDownload, FiInstagram, FiLoader, FiCornerUpLeft } from 'react-icons/fi';
+import { FiUpload, FiRepeat, FiDownload, FiInstagram, FiLoader, FiCornerUpLeft } from 'react-icons/fi';
 import { DECADES, FESTIVITIES, FILTERS } from './constants';
 import type { Theme, Filter } from './types';
 import { editImageWithGemini } from './services/geminiService';
@@ -51,25 +50,29 @@ const ImageUploader: React.FC<{ onImageUpload: (file: File) => void }> = ({ onIm
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto p-4">
+    <div className="w-full max-w-xs mx-auto pt-8">
       <label
         onDrop={handleDrop}
         onDragOver={handleDragOver}
-        className="relative flex flex-col items-center justify-center w-full aspect-[3/4] bg-gray-800 border-4 border-dashed border-gray-600 rounded-lg cursor-pointer hover:border-cyan-400 transition-all duration-300 group shadow-lg"
+        className="block cursor-pointer group transform -rotate-3 hover:rotate-0 hover:scale-105 transition-transform duration-300"
       >
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center text-center p-4">
-            <FiCamera className="w-16 h-16 text-gray-400 group-hover:text-cyan-400 transition-colors" />
-            <p className="mt-4 text-lg font-semibold text-gray-300">
-              <span className="text-cyan-400">Click to upload</span> or drag and drop
+        <div className="bg-white p-4 pb-20 rounded-sm shadow-2xl relative w-full">
+          <div className="bg-slate-800 aspect-square w-full flex flex-col items-center justify-center text-gray-500 border-2 border-slate-700 group-hover:border-cyan-400 transition-colors">
+            <FiUpload className="w-16 h-16 text-gray-400 group-hover:text-cyan-400 transition-colors" />
+            <p className="mt-2 text-lg font-semibold text-gray-400">
+              Carregar Foto
             </p>
-            <p className="text-sm text-gray-500">A high-quality portrait photo is recommended</p>
+          </div>
+          <p className="absolute bottom-6 left-0 right-0 text-center text-gray-800 text-3xl font-kalam">
+            Momento Perfeito
+          </p>
         </div>
         <input type="file" id="file-upload" className="hidden" accept="image/*" onChange={handleFileChange} />
       </label>
     </div>
   );
 };
+
 
 const ThemeSection: React.FC<{ title: string; themes: Theme[]; onSelect: (theme: Theme) => void; disabled: boolean }> = ({ title, themes, onSelect, disabled }) => (
     <div>
@@ -175,12 +178,42 @@ export default function App() {
   
   const handleDownload = () => {
     if (!generatedImage) return;
-    const link = document.createElement('a');
-    link.href = generatedImage;
-    link.download = `perfect-moment-${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+      console.error('Failed to get canvas context. Downloading unfiltered image as a fallback.');
+      const link = document.createElement('a');
+      link.href = generatedImage;
+      link.download = `perfect-moment-unfiltered-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      ctx.filter = selectedFilter.style;
+      ctx.drawImage(img, 0, 0);
+
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = `perfect-moment-${selectedFilter.id}-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+    
+    img.onerror = (err) => {
+        setError("Could not load the image to apply the filter for download.");
+        console.error("Image loading error for canvas:", err);
+    }
+    
+    img.src = generatedImage;
   };
   
   const handleImageChange = () => {
@@ -197,39 +230,41 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Image Column */}
             <div className="flex flex-col items-center gap-4">
-               <div className="w-full max-w-lg relative group">
-                  <div className={`aspect-[3/4] bg-gray-800 rounded-lg overflow-hidden shadow-2xl border-4 border-gray-700`}>
-                      {isLoading ? (
-                           <div className="flex flex-col items-center justify-center h-full">
-                               <FiLoader className="w-16 h-16 text-cyan-400 animate-spin" />
-                               <p className="mt-4 text-lg">Creating your moment...</p>
-                           </div>
-                      ) : (
-                          <img
-                              src={generatedImage || originalImage.url}
-                              alt={generatedImage ? "Generated" : "Original"}
-                              className={`w-full h-full object-cover transition-all duration-500 ${selectedFilter.className}`}
-                          />
-                      )}
-                  </div>
-                   <button onClick={handleImageChange} className="absolute top-2 right-2 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <FiRepeat size={20}/>
-                  </button>
-               </div>
-               
-               {generatedImage && !isLoading && (
-                   <div className="flex items-center gap-4 mt-4">
-                       <button onClick={handleRestart} className="flex items-center gap-2 px-4 py-2 bg-gray-600 rounded-md hover:bg-gray-500 transition-colors font-semibold text-sm">
-                           <FiRepeat /> Restart
-                       </button>
+                <div className="w-full max-w-md mx-auto perspective-container">
+                    <div className={`aspect-square w-full bg-slate-800 rounded-lg shadow-2xl overflow-hidden relative group transition-transform duration-500 ${isLoading ? 'animate-card-flip' : ''}`}>
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center h-full [transform:rotateY(180deg)]">
+                                <FiLoader className="w-16 h-16 text-cyan-400" />
+                                <p className="mt-4 text-lg text-gray-300">Criando seu momento...</p>
+                            </div>
+                        ) : (
+                            <>
+                                <img
+                                    src={generatedImage || originalImage.url}
+                                    alt={generatedImage ? "Generated" : "Original"}
+                                    className={`w-full h-full object-cover transition-all duration-500 ${selectedFilter.className}`}
+                                />
+                                <button onClick={handleImageChange} className="absolute top-4 right-4 bg-black bg-opacity-50 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10" aria-label="Change image">
+                                    <FiRepeat size={20} />
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {generatedImage && !isLoading && (
+                   <div className="flex flex-wrap items-center justify-center gap-4 mt-4">
                        <button onClick={handleUndo} className="flex items-center gap-2 px-4 py-2 bg-yellow-600 rounded-md hover:bg-yellow-500 transition-colors font-semibold text-sm">
                            <FiCornerUpLeft /> Undo
                        </button>
                        <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2 bg-cyan-600 rounded-md hover:bg-cyan-500 transition-colors font-semibold text-sm">
                            <FiDownload /> Download
                        </button>
+                       <button onClick={handleRestart} className="flex items-center gap-2 px-4 py-2 bg-gray-600 rounded-md hover:bg-gray-500 transition-colors font-semibold text-sm">
+                           <FiRepeat /> Start Over
+                       </button>
                    </div>
-               )}
+                )}
                 {error && <div className="mt-4 p-4 bg-red-900 border border-red-700 text-red-200 rounded-md text-center">{error}</div>}
             </div>
 

@@ -1,4 +1,3 @@
-
 export interface Theme {
     id: string;
     name: string;
@@ -9,4 +8,5 @@ export interface Filter {
     id: string;
     name: string;
     className: string;
+    style: string;
 }
