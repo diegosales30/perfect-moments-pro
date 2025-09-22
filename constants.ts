@@ -75,6 +75,9 @@ export const FESTIVITIES: Theme[] = [
     { id: 'festa-junina', name: 'Festa Junina', prompt: FESTIVITY_PROMPT_TEMPLATE('Brazilian Festa Junina (June Festival)') },
     { id: 'oktoberfest', name: 'Oktoberfest', prompt: FESTIVITY_PROMPT_TEMPLATE('Oktoberfest beer festival') },
     { id: 'rodeio', name: 'Rodeio', prompt: FESTIVITY_PROMPT_TEMPLATE('Brazilian Rodeo festival') },
+    { id: 'carnival-of-venice', name: 'Carnival of Venice', prompt: FESTIVITY_PROMPT_TEMPLATE('Carnival of Venice in Italy') },
+    { id: 'hanukkah', name: 'Hanukkah', prompt: FESTIVITY_PROMPT_TEMPLATE('Hanukkah, the Jewish festival of lights') },
+    { id: 'old-west', name: 'Old West', prompt: FESTIVITY_PROMPT_TEMPLATE('American Old West / Wild West setting') },
 ];
 
 export const FILTERS: Filter[] = [
